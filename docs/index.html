@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Architecture — NTU SCTP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ntu-navy:         #1B2A4A;
+    --ntu-dark:         #1E3054;
+    --ntu-blue:         #2C5697;
+    --ntu-blue-light:   #3D6DB5;
+    --ntu-crimson:      #C8102E;
+    --ntu-crimson-dark: #A50D26;
+
+    --bg:           #FFFFFF;
+    --bg-off:       #F4F5F7;
+    --border:       #DDE1E6;
+    --border-light: #E8EAED;
+    --text:         #1B2A4A;
+    --text-body:    #333D4D;
+    --text-dim:     #5F6B7A;
+    --text-light:   #8C95A1;
+
+    --c-data:  #2C5697;
+    --c-unsup: #6B4C9A;
+    --c-nlp:   #0E7490;
+    --c-nn:    #B45309;
+    --c-vec:   #1A7A5C;
+    --c-knn:   #BE123C;
+    --c-sup:   #C2410C;
+    --c-llm:   #C8102E;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-body);
+    background: var(--bg);
+  }
+  h1, h2, h3, h4 { color: var(--text); line-height: 1.25; margin: 0 0 0.6em; }
+  p { margin: 0 0 1em; }
+  img { max-width: 100%; display: block; }
+  a { color: var(--ntu-blue); }
+  code { background: var(--bg-off); border-radius: 3px; padding: 0.1em 0.4em; font-size: 0.9em; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2.5rem; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: var(--ntu-navy);
+    color: white;
+    padding: 3rem 2.5rem;
+    border-bottom: 6px solid var(--ntu-crimson);
+  }
+  .hero-inner { max-width: 880px; margin: 0 auto; width: 100%; }
+  .programme-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-weight: 300;
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+  .hero h1 strong { color: var(--ntu-crimson); font-weight: 700; }
+  .hero .subtitle { color: rgba(255,255,255,0.6); font-size: 1.05rem; max-width: 640px; }
+  .hero .scroll-hint {
+    margin-top: 3rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-light);
+  }
+
+  /* ---------- Section dividers ---------- */
+  .section-header {
+    background: var(--ntu-navy);
+    border-bottom: 5px solid var(--ntu-crimson);
+    color: white;
+    padding: 2rem 2.5rem;
+  }
+  .section-header .wrap { padding: 0; }
+  .section-header .tag {
+    background: rgba(255,255,255,0.12);
+    color: white;
+  }
+  .section-header h2 {
+    color: white;
+    font-weight: 300;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    margin: 0.5rem 0 0;
+  }
+  .section-header h2 strong { color: var(--ntu-crimson); font-weight: 700; }
+
+  section.content { padding: 2.5rem 0 3rem; }
+  section.content .wrap { padding: 0 2.5rem; }
+
+  /* ---------- Reveal on scroll ---------- */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ---------- Tags ---------- */
+  .tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25em 0.7em;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--module-color, var(--ntu-blue)) 14%, transparent);
+    color: var(--module-color, var(--ntu-blue));
+  }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    border-left: 4px solid var(--ntu-crimson);
+    background: var(--bg-off);
+    padding: 1.1rem 1.4rem;
+    border-radius: 0 4px 4px 0;
+    margin: 1.5rem 0;
+  }
+  .callout .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ntu-crimson);
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  /* ---------- Cards ---------- */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .card {
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--ntu-blue);
+    border-radius: 4px;
+    padding: 1.4rem;
+    background: var(--bg);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .card:hover { transform: scale(1.02); }
+  .card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+  .card p { font-size: 0.92rem; color: var(--text-body); margin-bottom: 0; }
+
+  /* ---------- Tables ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 0.7rem 0.9rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-off); color: var(--text); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ---------- Tabs (Warehouse/Lake/Lakehouse) ---------- */
+  .tabs { display: flex; gap: 0.5rem; margin: 1.5rem 0 0; flex-wrap: wrap; }
+  .tab-btn {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.65rem 1.1rem;
+    border: 1px solid var(--border);
+    background: var(--bg-off);
+    color: var(--text-dim);
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab-btn.active { background: var(--ntu-navy); color: white; border-color: var(--ntu-navy); }
+  .tab-panel { display: none; border: 1px solid var(--border); border-radius: 0 4px 4px 4px; padding: 1.5rem; background: var(--bg); }
+  .tab-panel.active { display: block; }
+  .tab-panel .meta-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+  /* ---------- Sorter / match quiz ---------- */
+  .sorter { margin: 1.5rem 0; }
+  .sorter-items { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; }
+  .sorter-item {
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .sorter-item:hover { border-color: var(--ntu-blue); }
+  .sorter-item.correct { background: color-mix(in srgb, #1A7A5C 14%, transparent); border-color: #1A7A5C; color: #1A7A5C; }
+  .sorter-item.wrong { background: color-mix(in srgb, var(--ntu-crimson) 14%, transparent); border-color: var(--ntu-crimson); color: var(--ntu-crimson-dark); }
+  .sorter-targets { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; }
+  .sorter-target {
+    border: 2px dashed var(--border);
+    border-radius: 4px;
+    padding: 0.9rem;
+    min-height: 70px;
+    font-size: 0.85rem;
+  }
+  .sorter-target strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 0.4rem; }
+  .sorter-feedback { margin-top: 0.8rem; font-size: 0.85rem; color: var(--text-dim); min-height: 1.4em; }
+
+  /* ---------- CAP theorem picker ---------- */
+  .cap-picker { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; }
+  .cap-node {
+    flex: 1 1 140px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--bg);
+  }
+  .cap-node .letter { font-size: 1.6rem; font-weight: 700; color: var(--ntu-blue); }
+  .cap-node .full { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; }
+  .cap-node.selected { border-color: var(--ntu-crimson); background: color-mix(in srgb, var(--ntu-crimson) 8%, transparent); }
+  .cap-node.selected .letter { color: var(--ntu-crimson); }
+  .cap-result { border: 1px solid var(--border); border-radius: 4px; padding: 1.2rem 1.4rem; background: var(--bg-off); min-height: 60px; font-size: 0.9rem; }
+  .cap-result strong { color: var(--text); }
+
+  /* ---------- Lambda/Kappa switch ---------- */
+  .arch-switch { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+  .arch-switch button {
+    font-family: inherit; font-weight: 700; font-size: 0.85rem;
+    padding: 0.6rem 1.2rem; border-radius: 4px; border: 1px solid var(--border);
+    background: var(--bg-off); color: var(--text-dim); cursor: pointer; transition: all 0.2s ease;
+  }
+  .arch-switch button.active { background: var(--ntu-blue); border-color: var(--ntu-blue); color: white; }
+  .arch-panel { display: none; }
+  .arch-panel.active { display: block; }
+  .arch-panel img { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; }
+
+  /* ---------- Accordion (Redis structures) ---------- */
+  .accordion-item { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 0.6rem; overflow: hidden; }
+  .accordion-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.9rem 1.2rem; cursor: pointer; background: var(--bg-off);
+    font-weight: 700; font-size: 0.9rem;
+  }
+  .accordion-head .chevron { transition: transform 0.2s ease; color: var(--text-dim); }
+  .accordion-item.open .chevron { transform: rotate(90deg); }
+  .accordion-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 1.2rem; }
+  .accordion-item.open .accordion-body { max-height: 220px; padding: 0.9rem 1.2rem 1.1rem; }
+  .accordion-body p { font-size: 0.88rem; margin: 0.3em 0; }
+
+  /* ---------- Scaling toggle ---------- */
+  .scale-toggle { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .scale-toggle button { font-family: inherit; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-off); color: var(--text-dim); cursor: pointer; }
+  .scale-toggle button.active { background: var(--ntu-navy); border-color: var(--ntu-navy); color: white; }
+
+  /* ---------- Recap ---------- */
+  .recap-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+  .recap-list li {
+    padding: 0.8rem 1rem 0.8rem 2.6rem;
+    position: relative;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.95rem;
+  }
+  .recap-list li:before {
+    content: '✓';
+    position: absolute; left: 0.8rem; color: var(--ntu-crimson); font-weight: 700;
+  }
+
+  footer { background: var(--bg-off); padding: 2.5rem; text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+  footer a { color: var(--ntu-blue); }
+
+  @media (max-width: 600px) {
+    .wrap, section.content .wrap, .hero { padding-left: 1.25rem; padding-right: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="programme-label">NTU (SCTP) Advanced Professional Certificate — Data Engineering</div>
+    <h1>Data <strong>Architecture</strong></h1>
+    <p class="subtitle">The blueprint behind every data platform: where data lives, how it scales, and why "nobody trusts the numbers" is usually a design problem, not a bug.</p>
+    <div class="scroll-hint">Scroll to begin ↓</div>
+  </div>
+</div>
+
+<!-- ============ SCENARIO ============ -->
+<section class="content">
+  <div class="wrap reveal">
+    <span class="tag">The Scenario</span>
+    <h2 style="margin-top:0.6rem;">FreshCart needs a data platform</h2>
+    <p>Your manager asks you to sketch out what FreshCart's future data platform should look like. FreshCart has structured order records, unstructured product images, and semi-structured delivery logs — and different teams already disagree on basic definitions like "active customer."</p>
+    <div class="callout">
+      <span class="label">Why this matters</span>
+      Data architecture is the blueprint. Getting it wrong means expensive rework later. A junior data engineer won't design the architecture alone, but you <em>will</em> be asked to implement parts of it — and "data warehouse vs data lake" or "Lambda vs Kappa" are interview staples.
+    </div>
+  </div>
+</section>
+
+<!-- ============ WAREHOUSE / LAKE / LAKEHOUSE ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 1</span>
+    <h2>Warehouse, Lake, or <strong>Lakehouse</strong>?</h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>These are the three dominant ways to store analytical data at scale. Each makes a different trade-off between structure, cost, and flexibility.</p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="warehouse">Data Warehouse</button>
+      <button class="tab-btn" data-tab="lake">Data Lake</button>
+      <button class="tab-btn" data-tab="lakehouse">Data Lakehouse</button>
+    </div>
+    <div class="tab-panel active" id="panel-warehouse">
+      <div class="meta-row"><span class="tag" style="--module-color:#2C5697">Structured only</span><span class="tag" style="--module-color:#2C5697">Schema-on-write</span></div>
+      <p><strong>What it is:</strong> A store optimised for structured, cleaned data — think rows and columns, ready for SQL and BI dashboards. Data is transformed <em>before</em> it's loaded (schema-on-write).</p>
+      <p><strong>Good for:</strong> FreshCart's structured order data — order ID, customer ID, timestamp, amount — fits neatly into tables. Finance and BI teams query it directly.</p>
+      <p><strong>Trade-off:</strong> Rigid schema. Adding a new, messy data source (like product images) usually doesn't fit.</p>
+    </div>
+    <div class="tab-panel" id="panel-lake">
+      <div class="meta-row"><span class="tag" style="--module-color:#1A7A5C">Any format</span><span class="tag" style="--module-color:#1A7A5C">Schema-on-read</span></div>
+      <p><strong>What it is:</strong> A low-cost store that keeps data in its raw, native format — structured, semi-structured, or unstructured. Structure is applied only when the data is <em>read</em> (schema-on-read).</p>
+      <p><strong>Good for:</strong> FreshCart's product images and semi-structured delivery logs (JSON) — dump them in cheaply, decide how to interpret them later.</p>
+      <p><strong>Trade-off:</strong> Without governance, a data lake becomes a "data swamp" — lots of files, no one sure what's trustworthy.</p>
+    </div>
+    <div class="tab-panel" id="panel-lakehouse">
+      <div class="meta-row"><span class="tag" style="--module-color:#6B4C9A">Best of both</span><span class="tag" style="--module-color:#6B4C9A">Modern default</span></div>
+      <p><strong>What it is:</strong> Lake-style low-cost storage for any file type, with warehouse-style structure, transactions, and query performance layered on top (e.g. Delta Lake, Apache Iceberg).</p>
+      <p><strong>Good for:</strong> FreshCart storing everything — orders, images, logs — in one place, with BI tools still able to query the structured parts reliably.</p>
+      <p><strong>Trade-off:</strong> Newer tooling, more moving parts to operate than a plain warehouse.</p>
+    </div>
+
+    <h4 style="margin-top:2rem;">Check yourself</h4>
+    <p style="font-size:0.9rem; color:var(--text-dim);">Click each FreshCart data source, then click the store you think fits best.</p>
+    <div class="sorter" id="sorter">
+      <div class="sorter-items" id="sorter-items">
+        <button class="sorter-item" data-answer="warehouse">Order records (rows, columns)</button>
+        <button class="sorter-item" data-answer="lake">Product photos (JPEG files)</button>
+        <button class="sorter-item" data-answer="lakehouse">Everything, queried reliably by BI</button>
+      </div>
+      <div class="sorter-targets">
+        <div class="sorter-target" data-target="warehouse"><strong>Data Warehouse</strong>structured, ready for SQL</div>
+        <div class="sorter-target" data-target="lake"><strong>Data Lake</strong>raw, any format, cheap</div>
+        <div class="sorter-target" data-target="lakehouse"><strong>Data Lakehouse</strong>structure + flexibility</div>
+      </div>
+      <div class="sorter-feedback" id="sorter-feedback">Select an item above, then a target below.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRINCIPLES ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 2</span>
+    <h2>Data Architecture <strong>Principles</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>Principles guide <em>decisions</em> about a data platform, the way a building code guides construction. Two are especially relevant to FreshCart's "nobody trusts the numbers" problem — which is a governance problem, not a technology one.</p>
+    <div class="card-grid">
+      <div class="card" style="border-top-color:#2C5697;">
+        <h4>Common Vocabulary</h4>
+        <p>Every team must agree on what terms mean. If marketing's "active customer" differs from product's, no amount of infrastructure fixes the mismatch — the definitions need to be aligned first.</p>
+      </div>
+      <div class="card" style="border-top-color:#C8102E;">
+        <h4>Data as a Shared Asset</h4>
+        <p>Data belongs to the organisation, not to the team that created it. Systems should be designed so data is discoverable and reusable across teams, not siloed.</p>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="label">Interview tip</span>
+      When someone says "our data platform is broken," ask whether it's a <strong>technology</strong> problem or a <strong>governance</strong> problem first. Many "fix the pipeline" requests are actually "align the definitions" requests.
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCALING ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 3</span>
+    <h2>Scaling <strong>Distributed Systems</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>Every cloud database you will ever use leans on two mechanisms to handle more data and more traffic than a single machine can.</p>
+    <div class="card-grid">
+      <div class="card" style="border-top-color:#2C5697;">
+        <h4>Replication</h4>
+        <p>Copy the same data onto multiple servers. If one server dies, another already has a copy. Gives <strong>fault tolerance</strong> and lets reads be spread across copies.</p>
+      </div>
+      <div class="card" style="border-top-color:#1A7A5C;">
+        <h4>Partitioning</h4>
+        <p>Split a large dataset into smaller chunks ("shards") spread across servers. No single machine holds all the data. Gives <strong>throughput</strong> — the workload is divided up.</p>
+      </div>
+    </div>
+    <img src="../../assets/partition_replication.png" alt="Diagram showing partitioning splitting data across nodes and replication copying data across nodes" style="border:1px solid var(--border); border-radius:4px; margin:1rem 0;">
+
+    <h4 style="margin-top:2rem;">Vertical vs Horizontal Scaling</h4>
+    <div class="scale-toggle" id="scale-toggle">
+      <button class="active" data-scale="vertical">Vertical (Scale Up)</button>
+      <button data-scale="horizontal">Horizontal (Scale Out)</button>
+    </div>
+    <div id="scale-text">
+      <p><strong>Vertical scaling</strong> means adding more power (CPU, RAM, disk) to a single existing server. Simple, but has a hard ceiling — there's a biggest machine money can buy — and that machine is a single point of failure.</p>
+    </div>
+    <img src="../../assets/vertical_horizontal_scaling.png" alt="Diagram comparing vertical scaling (bigger machine) and horizontal scaling (more machines)" style="border:1px solid var(--border); border-radius:4px;">
+  </div>
+</section>
+
+<!-- ============ CAP THEOREM ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 4</span>
+    <h2>The <strong>CAP Theorem</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>In a distributed system, a network <strong>Partition</strong> (a broken link between servers) will eventually happen. When it does, the CAP theorem says you must choose: stay <strong>Consistent</strong> (every read gets the latest write, but some nodes may refuse to answer) or stay <strong>Available</strong> (every node answers, but some might return stale data). You can't fully guarantee both during a partition.</p>
+    <p style="font-size:0.9rem; color:var(--text-dim);">Click two of the three to see what kind of system that combination describes.</p>
+    <div class="cap-picker" id="cap-picker">
+      <div class="cap-node" data-letter="C"><div class="letter">C</div><div class="full">Consistency</div></div>
+      <div class="cap-node" data-letter="A"><div class="letter">A</div><div class="full">Availability</div></div>
+      <div class="cap-node" data-letter="P"><div class="letter">P</div><div class="full">Partition Tolerance</div></div>
+    </div>
+    <div class="cap-result" id="cap-result">Pick two properties above — since network partitions are unavoidable in practice, every real distributed system keeps <strong>P</strong>, then picks between C and A.</div>
+
+    <div class="callout" style="margin-top:1.5rem;">
+      <span class="label">BASE — the practical alternative</span>
+      Most NoSQL databases (including Redis clusters) favour <strong>BASE</strong> over strict consistency: <strong>B</strong>asically <strong>A</strong>vailable, <strong>S</strong>oft state, <strong>E</strong>ventually consistent. The system stays responsive and converges to the correct value over time, rather than blocking until every replica agrees.
+    </div>
+  </div>
+</section>
+
+<!-- ============ LAMBDA / KAPPA ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 5</span>
+    <h2>Lambda vs <strong>Kappa</strong> Architecture</h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>Two blueprints for combining historical and real-time data processing in one platform.</p>
+    <div class="arch-switch" id="arch-switch">
+      <button class="active" data-arch="lambda">Lambda Architecture</button>
+      <button data-arch="kappa">Kappa Architecture</button>
+    </div>
+    <div class="arch-panel active" id="panel-lambda">
+      <img src="../../assets/lambda_archi.png" alt="Lambda architecture diagram with separate batch and speed layers feeding a serving layer">
+      <p>Runs <strong>two parallel pipelines</strong>: a <strong>batch layer</strong> that recomputes accurate views over all historical data, and a <strong>speed layer</strong> that gives fast, approximate real-time views. Both feed a serving layer that merges results.</p>
+      <p><strong>Trade-off:</strong> Powerful, but you maintain two separate codebases doing similar logic — batch and streaming.</p>
+    </div>
+    <div class="arch-panel" id="panel-kappa">
+      <img src="../../assets/kappa_archi.png" alt="Kappa architecture diagram with a single streaming layer replayable for reprocessing">
+      <p>Uses <strong>one pipeline only</strong>: everything is treated as a stream. Historical reprocessing is done by replaying the stream from the beginning, not by maintaining a separate batch system.</p>
+      <p><strong>Trade-off:</strong> Simpler to maintain (one codebase), but requires a stream platform (e.g. Kafka) that can retain and replay history efficiently.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODERN DATA STACK ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Concept 6</span>
+    <h2>The <strong>Modern Data Stack</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>In practice, FreshCart won't build one monolithic system — it will assemble a stack of specialised, cloud-managed tools: ingestion, storage, transformation, orchestration, and BI, each swappable.</p>
+    <img src="../../assets/modern_data_stack.png" alt="Diagram of the modern data stack: ingestion, storage, transformation, orchestration, and BI layers" style="border:1px solid var(--border); border-radius:4px;">
+  </div>
+</section>
+
+<!-- ============ TOOLS: REDIS + GCS ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Hands-on Tools</span>
+    <h2>NoSQL &amp; <strong>Object Storage</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <p>The lesson's hands-on covers two non-relational (NoSQL) stores that sit outside the warehouse/lake world above.</p>
+
+    <h4>Redis — in-memory key-value store</h4>
+    <p>Redis keeps data as <strong>key-value pairs entirely in RAM</strong>, so most operations run in O(1) — the same complexity as a Python dictionary lookup. That speed makes it the default choice for caching, sessions, and real-time counters, not for long-term storage of everything.</p>
+    <p style="font-size:0.9rem; color:var(--text-dim);">Click a data structure to see how real products use it.</p>
+    <div id="accordion">
+      <div class="accordion-item">
+        <div class="accordion-head"><span>String</span><span class="chevron">›</span></div>
+        <div class="accordion-body"><p><strong>GitHub</strong> counts repository stars/forks with a String.</p><p><strong>Stripe</strong> uses a String with an expiry for API rate limiting.</p></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-head"><span>Hash</span><span class="chevron">›</span></div>
+        <div class="accordion-body"><p><strong>Discord</strong> caches user profile info in a Hash.</p><p><strong>Amazon-style e-commerce</strong> caches product details and inventory in a Hash.</p></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-head"><span>List</span><span class="chevron">›</span></div>
+        <div class="accordion-body"><p><strong>Discord</strong> stores chat history in a List.</p><p><strong>GitHub</strong> uses a List as an event message queue.</p></div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-head"><span>Sorted Set (ZSet)</span><span class="chevron">›</span></div>
+        <div class="accordion-body"><p><strong>League of Legends</strong> builds real-time leaderboards with a ZSet — scores update and top players query instantly.</p><p><strong>E-commerce</strong> ranks product recommendations by user behaviour with a ZSet.</p></div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:2rem;">Google Cloud Storage — object storage</h4>
+    <p>GCS stores data as <strong>objects</strong> (files) inside flat containers called <strong>buckets</strong> — no folders or schema, just a key and a blob of bytes plus metadata. It's built for large, unstructured files: images, videos, backups, raw datasets feeding a data lake.</p>
+    <table>
+      <tr><th>Redis</th><th>Google Cloud Storage</th></tr>
+      <tr><td>In-memory, extremely fast</td><td>Disk-backed, optimised for durability over speed</td></tr>
+      <tr><td>Small structured values (strings, hashes, lists...)</td><td>Large unstructured blobs (images, videos, files)</td></tr>
+      <tr><td>Caching, sessions, real-time counters</td><td>Data lake storage, backups, static assets</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ RECAP ============ -->
+<div class="section-header">
+  <div class="wrap">
+    <span class="tag">Recap</span>
+    <h2>Key <strong>Takeaways</strong></h2>
+  </div>
+</div>
+<section class="content">
+  <div class="wrap reveal">
+    <ul class="recap-list">
+      <li>Warehouse = structured, schema-on-write. Lake = any format, schema-on-read. Lakehouse = both.</li>
+      <li>Replication → fault tolerance. Partitioning → throughput. Most systems use both.</li>
+      <li>"Nobody trusts the numbers" is usually a Common Vocabulary / governance problem, not a technology problem.</li>
+      <li>CAP theorem: partitions are unavoidable, so you trade off Consistency vs Availability. Most NoSQL stores choose BASE.</li>
+      <li>Lambda = two pipelines (batch + speed). Kappa = one pipeline (stream, replayable).</li>
+      <li>Redis = fast in-memory key-value store for small, hot data. GCS = durable object storage for large, unstructured files.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>NTU (SCTP) Advanced Professional Certificate — Module 2.2 Data Architecture</p>
+    <p>References: <a href="https://redis.io/docs/latest/develop/clients/redis-py/" target="_blank" rel="noopener">redis-py docs</a> · <a href="https://cloud.google.com/python/docs/reference/storage/latest/index.html" target="_blank" rel="noopener">GCS Python client</a> · <a href="https://www.geeksforgeeks.org/cap-theorem-vs-base-consistency-model-distributed-system/" target="_blank" rel="noopener">CAP theorem vs BASE</a></p>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+
+  // Tabs: Warehouse / Lake / Lakehouse
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Sorter quiz
+  let selectedItem = null;
+  document.querySelectorAll('.sorter-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.sorter-item').forEach(i => i.style.outline = 'none');
+      selectedItem = item;
+      item.style.outline = '2px solid var(--ntu-blue)';
+      document.getElementById('sorter-feedback').textContent = 'Now click the store you think this belongs to.';
+    });
+  });
+  document.querySelectorAll('.sorter-target').forEach(target => {
+    target.addEventListener('click', () => {
+      if (!selectedItem) {
+        document.getElementById('sorter-feedback').textContent = 'Pick a data source first.';
+        return;
+      }
+      const correct = selectedItem.dataset.answer === target.dataset.target;
+      selectedItem.classList.remove('correct', 'wrong');
+      selectedItem.classList.add(correct ? 'correct' : 'wrong');
+      selectedItem.style.outline = 'none';
+      document.getElementById('sorter-feedback').textContent = correct
+        ? 'Correct — that fits.'
+        : 'Not quite — think about structure and format, then try another target.';
+      if (correct) selectedItem = null;
+    });
+  });
+
+  // CAP picker
+  const capNodes = document.querySelectorAll('.cap-node');
+  let capSelected = [];
+  const capExplain = {
+    'C,A': 'Consistency + Availability, no Partition Tolerance: only possible on a single node / non-distributed system — as soon as the network can split, this breaks.',
+    'C,P': 'Consistency + Partition Tolerance (CP): during a partition, some nodes refuse to answer rather than risk stale data. Example: HBase, MongoDB (in default config).',
+    'A,P': 'Availability + Partition Tolerance (AP): during a partition, every node keeps answering, possibly with stale data. Example: Cassandra, DynamoDB, Redis Cluster.'
+  };
+  capNodes.forEach(node => {
+    node.addEventListener('click', () => {
+      if (node.classList.contains('selected')) {
+        node.classList.remove('selected');
+        capSelected = capSelected.filter(l => l !== node.dataset.letter);
+      } else {
+        if (capSelected.length === 2) {
+          const first = capNodes[[...capNodes].findIndex(n => n.dataset.letter === capSelected[0])];
+          first.classList.remove('selected');
+          capSelected.shift();
+        }
+        node.classList.add('selected');
+        capSelected.push(node.dataset.letter);
+      }
+      const result = document.getElementById('cap-result');
+      if (capSelected.length < 2) {
+        result.innerHTML = 'Pick two properties above — since network partitions are unavoidable in practice, every real distributed system keeps <strong>P</strong>, then picks between C and A.';
+      } else {
+        const key = [...capSelected].sort().join(',');
+        result.innerHTML = capExplain[key] || 'Pick a combination to see what it means.';
+      }
+    });
+  });
+
+  // Lambda / Kappa switch
+  document.querySelectorAll('#arch-switch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#arch-switch button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.arch-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.arch).classList.add('active');
+    });
+  });
+
+  // Scaling toggle
+  const scaleText = {
+    vertical: '<p><strong>Vertical scaling</strong> means adding more power (CPU, RAM, disk) to a single existing server. Simple, but has a hard ceiling — there\'s a biggest machine money can buy — and that machine is a single point of failure.</p>',
+    horizontal: '<p><strong>Horizontal scaling</strong> means adding more machines and spreading the load across them (often paired with partitioning). No hard ceiling — add another server when you need more capacity — but the system must be designed to coordinate across machines.</p>'
+  };
+  document.querySelectorAll('#scale-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#scale-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('scale-text').innerHTML = scaleText[btn.dataset.scale];
+    });
+  });
+
+  // Accordion
+  document.querySelectorAll('.accordion-head').forEach(head => {
+    head.addEventListener('click', () => {
+      const item = head.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+</script>
+
+</body>
+</html>
