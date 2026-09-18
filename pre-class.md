@@ -23,3 +23,5 @@ Data architecture is the blueprint. Getting it wrong means expensive rework late
 **Replication and Partitioning** — The two fundamental mechanisms for scaling distributed data systems. Replication gives you fault tolerance (if one server dies, another has a copy). Partitioning gives you throughput (split the workload). Every cloud database you'll ever use implements both.
 
 **Data Architecture Principles** — Especially "Common Vocabulary" and "Data as a Shared Asset." FreshCart's problem ("nobody trusts the numbers") is often a governance problem, not a technology one. When the marketing team's definition of "active customer" differs from the product team's, no amount of infrastructure fixes the issue.
+
+📄 [View lesson 2.2 interactive page](https://su-ntu-ctp.github.io/5m-data-2.2-data-architecture/)
