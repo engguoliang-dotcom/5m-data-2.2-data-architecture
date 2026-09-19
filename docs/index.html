@@ -407,7 +407,7 @@
         <p>Split a large dataset into smaller chunks ("shards") spread across servers. No single machine holds all the data. Gives <strong>throughput</strong> — the workload is divided up.</p>
       </div>
     </div>
-    <img src="../../assets/partition_replication.png" alt="Diagram showing partitioning splitting data across nodes and replication copying data across nodes" style="border:1px solid var(--border); border-radius:4px; margin:1rem 0;">
+    <img src="../assets/partition_replication.png" alt="Diagram showing partitioning splitting data across nodes and replication copying data across nodes" style="border:1px solid var(--border); border-radius:4px; margin:1rem 0;">
 
     <h4 style="margin-top:2rem;">Vertical vs Horizontal Scaling</h4>
     <div class="scale-toggle" id="scale-toggle">
@@ -417,7 +417,7 @@
     <div id="scale-text">
       <p><strong>Vertical scaling</strong> means adding more power (CPU, RAM, disk) to a single existing server. Simple, but has a hard ceiling — there's a biggest machine money can buy — and that machine is a single point of failure.</p>
     </div>
-    <img src="../../assets/vertical_horizontal_scaling.png" alt="Diagram comparing vertical scaling (bigger machine) and horizontal scaling (more machines)" style="border:1px solid var(--border); border-radius:4px;">
+    <img src="../assets/vertical_horizontal_scaling.png" alt="Diagram comparing vertical scaling (bigger machine) and horizontal scaling (more machines)" style="border:1px solid var(--border); border-radius:4px;">
   </div>
 </section>
 
@@ -461,12 +461,12 @@
       <button data-arch="kappa">Kappa Architecture</button>
     </div>
     <div class="arch-panel active" id="panel-lambda">
-      <img src="../../assets/lambda_archi.png" alt="Lambda architecture diagram with separate batch and speed layers feeding a serving layer">
+      <img src="../assets/lambda_archi.png" alt="Lambda architecture diagram with separate batch and speed layers feeding a serving layer">
       <p>Runs <strong>two parallel pipelines</strong>: a <strong>batch layer</strong> that recomputes accurate views over all historical data, and a <strong>speed layer</strong> that gives fast, approximate real-time views. Both feed a serving layer that merges results.</p>
       <p><strong>Trade-off:</strong> Powerful, but you maintain two separate codebases doing similar logic — batch and streaming.</p>
     </div>
     <div class="arch-panel" id="panel-kappa">
-      <img src="../../assets/kappa_archi.png" alt="Kappa architecture diagram with a single streaming layer replayable for reprocessing">
+      <img src="../assets/kappa_archi.png" alt="Kappa architecture diagram with a single streaming layer replayable for reprocessing">
       <p>Uses <strong>one pipeline only</strong>: everything is treated as a stream. Historical reprocessing is done by replaying the stream from the beginning, not by maintaining a separate batch system.</p>
       <p><strong>Trade-off:</strong> Simpler to maintain (one codebase), but requires a stream platform (e.g. Kafka) that can retain and replay history efficiently.</p>
     </div>
@@ -483,7 +483,7 @@
 <section class="content">
   <div class="wrap reveal">
     <p>In practice, FreshCart won't build one monolithic system — it will assemble a stack of specialised, cloud-managed tools: ingestion, storage, transformation, orchestration, and BI, each swappable.</p>
-    <img src="../../assets/modern_data_stack.png" alt="Diagram of the modern data stack: ingestion, storage, transformation, orchestration, and BI layers" style="border:1px solid var(--border); border-radius:4px;">
+    <img src="../assets/modern_data_stack.png" alt="Diagram of the modern data stack: ingestion, storage, transformation, orchestration, and BI layers" style="border:1px solid var(--border); border-radius:4px;">
   </div>
 </section>
 
